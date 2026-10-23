@@ -1,0 +1,583 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Chóp đáy tứ giác bất kỳ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Bricolage+Grotesque:wght@600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a drafting-table feel. Large 3D stage on the left, controls and measurements on the right, formulas below. */
+:root {
+  --bg: #EEF3F6;
+  --panel: #FFFFFF;
+  --stage: #F7FAFB;
+  --ink: #12222B;
+  --muted: #566B77;
+  --line: #D3DEE4;
+  --accent: #0B7A86;
+  --accent-soft: #D7EEF0;
+  --base: #5B7C99;
+  --warm: #C25E0C;
+  --mark: #6D4BC8;
+  --font-display: "Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1419;
+    --panel: #142028;
+    --stage: #101A21;
+    --ink: #E5EEF2;
+    --muted: #93A6B1;
+    --line: #26363F;
+    --accent: #4CC4D0;
+    --accent-soft: #17343A;
+    --base: #7FA2C2;
+    --warm: #F0A24E;
+    --mark: #B79CFF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1419;
+  --panel: #142028;
+  --stage: #101A21;
+  --ink: #E5EEF2;
+  --muted: #93A6B1;
+  --line: #26363F;
+  --accent: #4CC4D0;
+  --accent-soft: #17343A;
+  --base: #7FA2C2;
+  --warm: #F0A24E;
+  --mark: #B79CFF;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-block: 28px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+header { display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+.eyebrow { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 4.5vw, 38px); line-height: 1.12; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; }
+@media (max-width: 880px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+.stage {
+  position: relative;
+  background: var(--stage);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  touch-action: none;
+  cursor: grab;
+}
+canvas:active { cursor: grabbing; }
+@media (max-width: 560px) { canvas { aspect-ratio: 1 / 1; } }
+.hint {
+  position: absolute; left: 12px; bottom: 10px;
+  font-size: 12px; color: var(--muted);
+  pointer-events: none;
+}
+.chip {
+  position: absolute; right: 12px; top: 12px;
+  font-size: 12px; font-weight: 600;
+  background: var(--accent-soft); color: var(--accent);
+  padding: 3px 10px; border-radius: 999px;
+}
+.chip[hidden] { display: none; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+h2 { font-family: var(--font-display); font-size: 17px; margin: 0 0 4px; font-weight: 700; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.field label { font-weight: 500; }
+.field output { font-family: var(--font-mono); font-size: 14px; color: var(--accent); }
+input[type="range"] { width: 100%; accent-color: var(--accent); min-height: 28px; }
+.checks { display: flex; flex-direction: column; gap: 8px; }
+.checks label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.checks input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.swatch { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; font-weight: 500;
+  background: transparent; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 7px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.stats { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.stats dl { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+@media (max-width: 720px) { .stats dl { grid-template-columns: minmax(0, 1fr); } }
+.stat { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.stat dt { font-weight: 500; }
+.stat .f { grid-column: 1; font-family: var(--font-mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.stat dd { margin: 0; grid-column: 2; grid-row: 1 / span 2; align-self: center; font-family: var(--font-mono); font-size: 16px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.stat.key dd { color: var(--accent); }
+.note { margin: 14px 0 0; font-size: 13px; color: var(--muted); max-width: 80ch; }
+
+.plan { display: block; width: 100%; aspect-ratio: 1 / 1; touch-action: none; border: 1px solid var(--line); border-radius: 10px; background: var(--stage); cursor: default; }
+.plan-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.plan-head h2 { margin: 0; }
+.type { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.type.warn { background: color-mix(in srgb, var(--warm) 18%, var(--panel)); color: var(--warm); }
+.plan-note { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Hình học không gian · Lớp 11</div>
+    <h1>Hình chóp S.ABCD đáy tứ giác bất kỳ</h1>
+    <p>Kéo các điểm A, B, C, D và chân đường cao H trên mặt bằng đáy. Hình chóp 3D và các số đo thay đổi theo.</p>
+  </header>
+
+  <div class="grid">
+    <div class="stage">
+      <canvas id="cv" aria-label="Mô hình 3D hình chóp S.ABCD đáy tứ giác" role="img"></canvas>
+      <span class="hint">Nét đứt là cạnh bị che khuất · kéo để xoay, cuộn để phóng to</span>
+    </div>
+
+    <aside class="panel">
+      <div>
+        <div class="plan-head"><h2>Mặt bằng đáy</h2><span class="type" id="type">Tứ giác thường</span></div>
+        <canvas id="plan" class="plan" aria-label="Mặt bằng đáy ABCD, kéo các điểm để đổi hình dạng" role="img"></canvas>
+        <p class="plan-note">Lưới 1 cm. Chỉ nhận tứ giác lồi. H là hình chiếu của đỉnh S xuống đáy.</p>
+      </div>
+
+      <div class="field">
+        <div class="row"><label for="rh">Chiều cao h = SH</label><output id="oh" for="rh">4,5 cm</output></div>
+        <input id="rh" type="range" min="1" max="8" step="0.1" value="4.5">
+      </div>
+
+      <div>
+        <h2>Hiển thị</h2>
+        <div class="checks">
+          <label for="cH"><input id="cH" type="checkbox" checked><span><span class="swatch" style="background:var(--warm)"></span>Đường cao SH</span></label>
+          <label for="cD"><input id="cD" type="checkbox" checked><span><span class="swatch" style="background:var(--mark)"></span>Hai đường chéo AC, BD</span></label>
+          <label for="cR"><input id="cR" type="checkbox"><span>Tự động xoay</span></label>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="bGen" type="button">Tứ giác thường</button>
+        <button id="bTrap" type="button">Hình thang</button>
+        <button id="bReset" type="button">Đặt lại góc nhìn</button>
+      </div>
+    </aside>
+  </div>
+
+  <section class="stats" aria-labelledby="sh">
+    <h2 id="sh">Số đo (đơn vị cm)</h2>
+    <dl id="statList"></dl>
+    <p class="note">Đáy ABCD là tứ giác lồi có các cạnh và góc tùy ý, đỉnh S nằm trên đường thẳng vuông góc với đáy tại H. Khi H không trùng giao điểm hai đường chéo thì các cạnh bên và các mặt bên không bằng nhau. Diện tích đáy tính bằng công thức tọa độ, diện tích xung quanh là tổng diện tích bốn tam giác SAB, SBC, SCD, SDA.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var cv = $('cv'), ctx = cv.getContext('2d');
+  var pc = $('plan'), pctx = pc.getContext('2d');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var DEF = { yaw: 0.7, pitch: 0.38, zoom: 1 };
+  var GEN = [[-3.0, 2.0], [2.6, 2.4], [3.2, -1.6], [-1.4, -2.6]];
+  var TRAP = [[-3.2, 2.2], [2.8, 2.2], [1.6, -2.4], [-1.6, -2.4]];
+  var st = { P: GEN.map(function (p) { return p.slice(); }), H: [0.2, -0.1], h: 4.5,
+             yaw: DEF.yaw, pitch: DEF.pitch, zoom: DEF.zoom, auto: !reduce, showH: true, showD: true, drag: false };
+  var W = 0, H = 0, dpr = 1, dirty = true;
+  var PW = 0, pdirty = true;
+  var LIM = 4.5;
+
+  function fmt(x, d) {
+    if (d === undefined) d = 2;
+    return x.toLocaleString('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+
+  function resize() {
+    var r = cv.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    var q = pc.getBoundingClientRect();
+    PW = q.width;
+    pc.width = Math.round(PW * dpr); pc.height = Math.round(PW * dpr);
+    dirty = true; pdirty = true;
+  }
+  new ResizeObserver(resize).observe(cv);
+  new ResizeObserver(resize).observe(pc);
+
+  /* ---------- geometry ---------- */
+  function model() {
+    var P = st.P, h = st.h;
+    var cx = (P[0][0] + P[1][0] + P[2][0] + P[3][0]) / 4;
+    var cz = (P[0][1] + P[1][1] + P[2][1] + P[3][1]) / 4;
+    var dy = -h / 2;
+    function v(x, y, z) { return [x - cx, y + dy, z - cz]; }
+    return {
+      A: v(P[0][0], 0, P[0][1]), B: v(P[1][0], 0, P[1][1]),
+      C: v(P[2][0], 0, P[2][1]), D: v(P[3][0], 0, P[3][1]),
+      S: v(st.H[0], h, st.H[1]), H: v(st.H[0], 0, st.H[1])
+    };
+  }
+  function rot(p) {
+    var cy = Math.cos(st.yaw), sy = Math.sin(st.yaw);
+    var cp = Math.cos(st.pitch), sp = Math.sin(st.pitch);
+    var x1 = p[0] * cy + p[2] * sy;
+    var z1 = -p[0] * sy + p[2] * cy;
+    var y2 = p[1] * cp - z1 * sp;
+    var z2 = p[1] * sp + z1 * cp;
+    return [x1, y2, z2];
+  }
+  var D = 28;
+  function proj(q) {
+    var sc = Math.min(W, H) / 13 * st.zoom;
+    var f = D / (D - q[2]);
+    return [W / 2 + q[0] * sc * f, H / 2 - q[1] * sc * f];
+  }
+  function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+  function len3(a) { return Math.sqrt(dot(a, a)); }
+  function avg(list) {
+    var s = [0, 0, 0];
+    list.forEach(function (p) { s[0] += p[0]; s[1] += p[1]; s[2] += p[2]; });
+    return [s[0] / list.length, s[1] / list.length, s[2] / list.length];
+  }
+  function convexOK(P) {
+    var sign = 0;
+    for (var i = 0; i < 4; i++) {
+      var a = P[i], b = P[(i + 1) % 4], c = P[(i + 2) % 4];
+      var cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+      if (Math.abs(cr) < 0.4) return false;
+      var sg = cr > 0 ? 1 : -1;
+      if (sign && sg !== sign) return false;
+      sign = sg;
+    }
+    return true;
+  }
+  function parallel(p, q, r, s) {
+    var u = [q[0] - p[0], q[1] - p[1]], v = [s[0] - r[0], s[1] - r[1]];
+    var c = u[0] * v[1] - u[1] * v[0];
+    return Math.abs(c) / (Math.hypot(u[0], u[1]) * Math.hypot(v[0], v[1])) < 0.03;
+  }
+  function baseType() {
+    var P = st.P;
+    var p1 = parallel(P[0], P[1], P[2], P[3]);
+    var p2 = parallel(P[1], P[2], P[3], P[0]);
+    if (p1 && p2) return 'par';
+    if (p1 || p2) return 'trap';
+    return 'gen';
+  }
+
+  /* ---------- 3D drawing ---------- */
+  function draw() {
+    var css = getComputedStyle(document.documentElement);
+    var col = function (n) { return css.getPropertyValue(n).trim(); };
+    var ink = col('--ink'), accent = col('--accent'), base = col('--base'),
+        warm = col('--warm'), mark = col('--mark'), stage = col('--stage'), muted = col('--muted');
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+
+    var m = model();
+    var Q = {}, X = {};
+    Object.keys(m).forEach(function (k) { Q[k] = rot(m[k]); X[k] = proj(Q[k]); });
+
+    var tc = avg([Q.S, Q.A, Q.B, Q.C, Q.D]);
+    var cam = [0, 0, D];
+    var faceIdx = [['S', 'A', 'B'], ['S', 'B', 'C'], ['S', 'C', 'D'], ['S', 'D', 'A'], ['A', 'B', 'C', 'D']];
+    var faces = faceIdx.map(function (f, i) {
+      var p = f.map(function (k) { return Q[k]; });
+      var fc = avg(p);
+      var n = cross(sub(p[1], p[0]), sub(p[2], p[0]));
+      if (dot(n, sub(fc, tc)) < 0) n = [-n[0], -n[1], -n[2]];
+      return { i: i, keys: f, z: fc[2], vis: dot(n, sub(cam, fc)) > 0 };
+    });
+
+    faces.slice().sort(function (p, q) { return p.z - q.z; }).forEach(function (f) {
+      ctx.beginPath();
+      f.keys.forEach(function (k, j) { var s = X[k]; if (j) ctx.lineTo(s[0], s[1]); else ctx.moveTo(s[0], s[1]); });
+      ctx.closePath();
+      ctx.fillStyle = f.i === 4 ? base : accent;
+      ctx.globalAlpha = f.vis ? 0.24 : 0.07;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    var edges = [['S', 'A', 3, 0], ['S', 'B', 0, 1], ['S', 'C', 1, 2], ['S', 'D', 2, 3], ['A', 'B', 0, 4], ['B', 'C', 1, 4], ['C', 'D', 2, 4], ['D', 'A', 3, 4]];
+    function line(a, b, color, w, dash, alpha) {
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+      ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash || []); ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+      ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+    edges.forEach(function (e) {
+      var hidden = !faces[e[2]].vis && !faces[e[3]].vis;
+      if (hidden) line(X[e[0]], X[e[1]], ink, 1.5, [6, 5], 0.55);
+    });
+    edges.forEach(function (e) {
+      var hidden = !faces[e[2]].vis && !faces[e[3]].vis;
+      if (!hidden) line(X[e[0]], X[e[1]], ink, 2.2);
+    });
+
+    if (st.showD) {
+      var bv = faces[4].vis;
+      line(X.A, X.C, mark, 1.8, bv ? [] : [6, 4], bv ? 1 : 0.8);
+      line(X.B, X.D, mark, 1.8, bv ? [] : [6, 4], bv ? 1 : 0.8);
+    }
+    if (st.showH) line(X.S, X.H, warm, 2.4, [7, 4]);
+
+    var cs = avg([X.S, X.A, X.B, X.C, X.D].map(function (p) { return [p[0], p[1], 0]; }));
+    var fam = getComputedStyle(document.body).fontFamily;
+    function label(name, p, dx, dy, color, size) {
+      ctx.font = '700 ' + (size || 17) + 'px ' + fam;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 5; ctx.strokeStyle = stage; ctx.strokeText(name, p[0] + dx, p[1] + dy);
+      ctx.fillStyle = color; ctx.fillText(name, p[0] + dx, p[1] + dy);
+    }
+    function pt(p, color, r) {
+      ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+    }
+    ['S', 'A', 'B', 'C', 'D'].forEach(function (k) {
+      var p = X[k];
+      var vx = p[0] - cs[0], vy = p[1] - cs[1];
+      var len = Math.hypot(vx, vy) || 1;
+      pt(p, ink, 3.6);
+      label(k, p, vx / len * 16, vy / len * 16, ink);
+    });
+    if (st.showH) {
+      pt(X.H, warm, 3.6);
+      label('H', X.H, -14, 12, warm, 15);
+      var mid = [(X.S[0] + X.H[0]) / 2, (X.S[1] + X.H[1]) / 2];
+      label('h', mid, 13, 0, warm, 15);
+    }
+  }
+
+  /* ---------- plan drawing and editing ---------- */
+  function pscale() { return PW / (2 * (LIM + 0.6)); }
+  function toPx(x, z) { var s = pscale(); return [PW / 2 + x * s, PW / 2 + z * s]; }
+  function drawPlan() {
+    var css = getComputedStyle(document.documentElement);
+    var col = function (n) { return css.getPropertyValue(n).trim(); };
+    var ink = col('--ink'), base = col('--base'), warm = col('--warm'), mark = col('--mark'),
+        line = col('--line'), muted = col('--muted'), stage = col('--stage'), accent = col('--accent');
+    pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    pctx.clearRect(0, 0, PW, PW);
+    var s = pscale();
+    pctx.lineWidth = 1;
+    for (var g = -4; g <= 4; g++) {
+      pctx.strokeStyle = line; pctx.globalAlpha = g === 0 ? 1 : 0.55;
+      var a = toPx(g, -LIM - 0.6), b = toPx(g, LIM + 0.6);
+      pctx.beginPath(); pctx.moveTo(a[0], a[1]); pctx.lineTo(b[0], b[1]); pctx.stroke();
+      a = toPx(-LIM - 0.6, g); b = toPx(LIM + 0.6, g);
+      pctx.beginPath(); pctx.moveTo(a[0], a[1]); pctx.lineTo(b[0], b[1]); pctx.stroke();
+    }
+    pctx.globalAlpha = 1;
+    var px = st.P.map(function (p) { return toPx(p[0], p[1]); });
+    pctx.beginPath();
+    px.forEach(function (p, i) { if (i) pctx.lineTo(p[0], p[1]); else pctx.moveTo(p[0], p[1]); });
+    pctx.closePath();
+    pctx.fillStyle = base; pctx.globalAlpha = 0.22; pctx.fill(); pctx.globalAlpha = 1;
+    pctx.strokeStyle = ink; pctx.lineWidth = 2; pctx.lineJoin = 'round'; pctx.stroke();
+    if (st.showD) {
+      pctx.strokeStyle = mark; pctx.lineWidth = 1.5; pctx.setLineDash([5, 4]);
+      [[0, 2], [1, 3]].forEach(function (d) {
+        pctx.beginPath(); pctx.moveTo(px[d[0]][0], px[d[0]][1]); pctx.lineTo(px[d[1]][0], px[d[1]][1]); pctx.stroke();
+      });
+      pctx.setLineDash([]);
+    }
+    var fam = getComputedStyle(document.body).fontFamily;
+    var cxp = (px[0][0] + px[1][0] + px[2][0] + px[3][0]) / 4, cyp = (px[0][1] + px[1][1] + px[2][1] + px[3][1]) / 4;
+    ['A', 'B', 'C', 'D'].forEach(function (n, i) {
+      var p = px[i];
+      var vx = p[0] - cxp, vy = p[1] - cyp, l = Math.hypot(vx, vy) || 1;
+      pctx.beginPath(); pctx.arc(p[0], p[1], 7, 0, Math.PI * 2);
+      pctx.fillStyle = stage; pctx.fill(); pctx.lineWidth = 2.5; pctx.strokeStyle = ink; pctx.stroke();
+      pctx.font = '700 15px ' + fam; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
+      pctx.fillStyle = ink; pctx.fillText(n, p[0] + vx / l * 20, p[1] + vy / l * 20);
+    });
+    var hp = toPx(st.H[0], st.H[1]);
+    pctx.beginPath(); pctx.arc(hp[0], hp[1], 7, 0, Math.PI * 2);
+    pctx.fillStyle = warm; pctx.fill(); pctx.lineWidth = 2.5; pctx.strokeStyle = stage; pctx.stroke();
+    pctx.font = '700 15px ' + fam; pctx.fillStyle = warm; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
+    pctx.fillText('H', hp[0] + 16, hp[1] - 12);
+  }
+
+  var grab = -1; // 0-3 base vertices, 4 = H
+  function handlePos(i) { return i < 4 ? toPx(st.P[i][0], st.P[i][1]) : toPx(st.H[0], st.H[1]); }
+  function pick(e) {
+    var r = pc.getBoundingClientRect();
+    var x = e.clientX - r.left, y = e.clientY - r.top;
+    var best = -1, bd = 22;
+    for (var i = 4; i >= 0; i--) {
+      var p = handlePos(i), d = Math.hypot(p[0] - x, p[1] - y);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+  function snap(v) { return Math.max(-LIM, Math.min(LIM, Math.round(v * 10) / 10)); }
+  pc.addEventListener('pointerdown', function (e) {
+    var i = pick(e);
+    if (i < 0) return;
+    grab = i; pc.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  pc.addEventListener('pointermove', function (e) {
+    if (grab < 0) { pc.style.cursor = pick(e) >= 0 ? 'grab' : 'default'; return; }
+    var r = pc.getBoundingClientRect(), s = pscale();
+    var x = snap((e.clientX - r.left - PW / 2) / s), z = snap((e.clientY - r.top - PW / 2) / s);
+    if (grab === 4) { st.H = [x, z]; }
+    else {
+      var cand = st.P.map(function (p) { return p.slice(); });
+      cand[grab] = [x, z];
+      if (!convexOK(cand)) return;
+      st.P = cand;
+    }
+    refresh();
+  });
+  function pend(e) { grab = -1; }
+  pc.addEventListener('pointerup', pend);
+  pc.addEventListener('pointercancel', pend);
+
+  /* ---------- measurements ---------- */
+  function pts() {
+    var P = st.P, h = st.h;
+    return { A: [P[0][0], 0, P[0][1]], B: [P[1][0], 0, P[1][1]], C: [P[2][0], 0, P[2][1]], D: [P[3][0], 0, P[3][1]], S: [st.H[0], h, st.H[1]] };
+  }
+  function L(p, a, b) { return len3(sub(p[a], p[b])); }
+  function tri(p, a, b, c) { return 0.5 * len3(cross(sub(p[b], p[a]), sub(p[c], p[a]))); }
+  function baseArea() {
+    var P = st.P, s = 0;
+    for (var i = 0; i < 4; i++) { var a = P[i], b = P[(i + 1) % 4]; s += a[0] * b[1] - b[0] * a[1]; }
+    return Math.abs(s) / 2;
+  }
+  var rows = [
+    { k: 'Thể tích V', f: '⅓ · S_đáy · h', key: true, v: function (p) { return fmt(baseArea() * st.h / 3); } },
+    { k: 'Diện tích đáy', f: '½ |Σ (xᵢ·zᵢ₊₁ − xᵢ₊₁·zᵢ)|', v: function () { return fmt(baseArea()); } },
+    { k: 'Diện tích xung quanh', f: 'SAB + SBC + SCD + SDA', v: function (p) { return fmt(tri(p, 'S', 'A', 'B') + tri(p, 'S', 'B', 'C') + tri(p, 'S', 'C', 'D') + tri(p, 'S', 'D', 'A')); } },
+    { k: 'Diện tích toàn phần', f: 'S_xq + S_đáy', v: function (p) { return fmt(tri(p, 'S', 'A', 'B') + tri(p, 'S', 'B', 'C') + tri(p, 'S', 'C', 'D') + tri(p, 'S', 'D', 'A') + baseArea()); } },
+    { k: 'AB', f: 'cạnh đáy', v: function (p) { return fmt(L(p, 'A', 'B')); } },
+    { k: 'BC', f: 'cạnh đáy', v: function (p) { return fmt(L(p, 'B', 'C')); } },
+    { k: 'CD', f: 'cạnh đáy', v: function (p) { return fmt(L(p, 'C', 'D')); } },
+    { k: 'DA', f: 'cạnh đáy', v: function (p) { return fmt(L(p, 'D', 'A')); } },
+    { k: 'AC', f: 'đường chéo đáy', v: function (p) { return fmt(L(p, 'A', 'C')); } },
+    { k: 'BD', f: 'đường chéo đáy', v: function (p) { return fmt(L(p, 'B', 'D')); } },
+    { k: 'SA', f: 'cạnh bên', v: function (p) { return fmt(L(p, 'S', 'A')); } },
+    { k: 'SB', f: 'cạnh bên', v: function (p) { return fmt(L(p, 'S', 'B')); } },
+    { k: 'SC', f: 'cạnh bên', v: function (p) { return fmt(L(p, 'S', 'C')); } },
+    { k: 'SD', f: 'cạnh bên', v: function (p) { return fmt(L(p, 'S', 'D')); } }
+  ];
+  var list = $('statList');
+  var cells = rows.map(function (r) {
+    var wrap = document.createElement('div'); wrap.className = 'stat' + (r.key ? ' key' : '');
+    var dt = document.createElement('dt'); dt.textContent = r.k;
+    var f = document.createElement('div'); f.className = 'f'; f.textContent = r.f;
+    var dd = document.createElement('dd');
+    wrap.appendChild(dt); wrap.appendChild(f); wrap.appendChild(dd);
+    list.appendChild(wrap);
+    return dd;
+  });
+  function refresh() {
+    var p = pts();
+    rows.forEach(function (r, i) { cells[i].textContent = r.v(p); });
+    $('oh').textContent = fmt(st.h, 1) + ' cm';
+    var t = baseType(), el = $('type');
+    el.className = 'type' + (t === 'par' ? ' warn' : '');
+    el.textContent = t === 'par' ? 'Hình bình hành, hãy kéo một đỉnh' : (t === 'trap' ? 'Hình thang' : 'Tứ giác thường');
+    dirty = true; pdirty = true;
+  }
+
+  /* ---------- controls ---------- */
+  $('rh').addEventListener('input', function (e) { st.h = parseFloat(e.target.value); refresh(); });
+  $('cH').addEventListener('change', function (e) { st.showH = e.target.checked; dirty = true; });
+  $('cD').addEventListener('change', function (e) { st.showD = e.target.checked; dirty = true; pdirty = true; });
+  $('cR').checked = st.auto;
+  $('cR').addEventListener('change', function (e) { st.auto = e.target.checked; });
+  $('bGen').addEventListener('click', function () { st.P = GEN.map(function (p) { return p.slice(); }); st.H = [0.2, -0.1]; refresh(); });
+  $('bTrap').addEventListener('click', function () { st.P = TRAP.map(function (p) { return p.slice(); }); st.H = [0, 0]; refresh(); });
+  $('bReset').addEventListener('click', function () { st.yaw = DEF.yaw; st.pitch = DEF.pitch; st.zoom = DEF.zoom; dirty = true; });
+
+  /* ---------- pointer on 3D view: rotate and pinch ---------- */
+  var ptrs = {}, pinch = 0;
+  function count() { return Object.keys(ptrs).length; }
+  function dist() {
+    var k = Object.keys(ptrs);
+    return Math.hypot(ptrs[k[0]].x - ptrs[k[1]].x, ptrs[k[0]].y - ptrs[k[1]].y);
+  }
+  cv.addEventListener('pointerdown', function (e) {
+    cv.setPointerCapture(e.pointerId);
+    ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    st.drag = true;
+    if (count() === 2) pinch = dist();
+  });
+  cv.addEventListener('pointermove', function (e) {
+    var p = ptrs[e.pointerId];
+    if (!p) return;
+    if (count() === 1) {
+      st.yaw += (e.clientX - p.x) * 0.01;
+      st.pitch = Math.max(-1.45, Math.min(1.45, st.pitch + (e.clientY - p.y) * 0.01));
+    }
+    p.x = e.clientX; p.y = e.clientY;
+    if (count() === 2) {
+      var d = dist();
+      if (pinch > 0) st.zoom = Math.max(0.5, Math.min(2.6, st.zoom * d / pinch));
+      pinch = d;
+    }
+    dirty = true;
+  });
+  function up(e) {
+    delete ptrs[e.pointerId];
+    if (count() < 2) pinch = 0;
+    if (count() === 0) st.drag = false;
+  }
+  cv.addEventListener('pointerup', up);
+  cv.addEventListener('pointercancel', up);
+  cv.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    st.zoom = Math.max(0.5, Math.min(2.6, st.zoom * Math.exp(-e.deltaY * 0.0012)));
+    dirty = true;
+  }, { passive: false });
+
+  /* ---------- theme changes ---------- */
+  function redrawAll() { dirty = true; pdirty = true; }
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redrawAll); } catch (e) {}
+  new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redrawAll);
+
+  /* ---------- loop ---------- */
+  var last = performance.now();
+  function tick(t) {
+    var dt = Math.min(0.1, (t - last) / 1000); last = t;
+    if (st.auto && !st.drag) { st.yaw += dt * 0.3; dirty = true; }
+    if (dirty) { dirty = false; if (W > 0) draw(); }
+    if (pdirty) { pdirty = false; if (PW > 0) drawPlan(); }
+    requestAnimationFrame(tick);
+  }
+  refresh();
+  resize();
+  requestAnimationFrame(tick);
+})();
+</script>
+
+</body></html>
